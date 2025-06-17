@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi" class="no-js no-svg">
+
+<head>
+    <link href="lib/pflip/css/pdfflip.css" rel="stylesheet" type="text/css">
+    <script type='text/javascript' src='lib/jquery.js'></script>
+    <script src="lib/pflip/js/pdfflip.js" type="text/javascript"></script>
+    <script src="lib/pflip/js/settings.js" type="text/javascript"></script>
+    <style>
+    </style>
+</head>
+
+<body>
+    <div class="app">
+    </div>
+</body>
+ <script>
+        function getQueryParams() {
+            const params = {}
+            window.location.search.substring(1).split("&").forEach(function (item) {
+                const parts = item.split("=")
+                params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1])
+            })
+            return params
+        }
+        const params = getQueryParams()
+        document.querySelector('.app').innerHTML = `<div class="PDFFlip" id="PDFF" source="${params['id']}"></div>`
+    </script>
+
+</html>

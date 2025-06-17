@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Thăng Long thời Đại Việt</title>
+        <script>
+            function getQueryParams() {
+                const params = {}
+                window.location.search.substring(1).split("&").forEach(function (item) {
+                    const parts = item.split("=")
+                    params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1])
+                })
+                return params
+            }
+            const PARAMS = getQueryParams()
+            if (PARAMS['api']) {
+                localStorage.setItem('api', PARAMS['api'])
+            }
+            if (PARAMS['template']) {
+                localStorage.setItem('template', PARAMS['template'])
+            }
+            if (PARAMS['kiosk']) {
+                localStorage.setItem('kiosk', PARAMS['kiosk'])
+            }
+        </script>
+
+    </head>
+    <body>
+        <div id="app"></div>
+        <script type="module" src="/src/main.js"></script>
+    </body>
+</html>

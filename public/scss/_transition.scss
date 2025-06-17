@@ -1,0 +1,281 @@
+// Book component animation
+.bookshelf-fade-enter-active,
+.bookshelf-fade-leave-active {
+  animation-timing-function: 1s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Smooth easing */
+  transform-origin: left center;
+}
+
+.bookshelf-fade-enter-active {
+  animation: fadeIn 0.6s forwards ease-out;
+}
+
+.bookshelf-fade-leave-active {
+  animation: fadeOut 0.6s forwards ease-out;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(-27%);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(-27%);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+// Map component animation
+.position-fade-enter-active,
+.position-fade-leave-active {
+  animation-timing-function: 1s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Smooth easing */
+  transform-origin: left center;
+}
+
+.position-fade-enter-active {
+  animation: positionFadeIn 0.6s forwards ease-out;
+}
+
+.position-fade-leave-active {
+  animation: positionFadeOut 0.6s forwards ease-out;
+}
+
+@keyframes positionFadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes positionFadeOut {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  animation-timing-function: 1s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Smooth easing */
+  transform-origin: left center;
+}
+
+.modal-fade-enter-active {
+  animation: modalFadeIn 0.6s forwards ease-out;
+}
+
+.modal-fade-leave-active {
+  animation: modalFadeOut 0.6s forwards ease-out;
+}
+
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalFadeOut {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+}
+
+
+
+/**
+* !Animations
+*/
+//Macbook Window PopUp Animation
+.mac-window-enter-active {
+  animation: macWindowIn 2.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+@keyframes macWindowIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.1) translateY(-30px);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+
+//Fade animation vue 
+.fade-enter-active {
+  animation: slideRightIn 0.5s ease-in-out;
+  transform-origin: center center;
+}
+
+@keyframes slideRightIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.fade-leave-active {
+  animation: slideRightOut 0.5s ease-in-out;
+  transform-origin: center center;
+}
+
+@keyframes slideRightOut {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.slide-down-enter-active {
+  animation: slideDownIn 2.5s ease-in-out;
+  transform-origin: center center;
+}
+
+@keyframes slideDownIn {
+  0% {
+    opacity: 0;
+    transform: scale(0) translateY(-100px);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Timeline animation
+
+.reveal-rtl-enter-active {
+  animation: revealRtl 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+.reveal-rtl-leave-active {
+  animation: revealRtlReverse 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+@keyframes revealRtl {
+  0% {
+    transform: scaleX(0.5);
+    transform-origin: right;
+    opacity: 0;
+  }
+
+  100% {
+    transform: scaleX(1);
+    transform-origin: right;
+    opacity: 1;
+  }
+}
+
+@keyframes revealRtlReverse {
+  0% {
+    transform: scaleX(1);
+    transform-origin: right;
+    opacity: 1;
+  }
+
+  100% {
+    transform: scaleX(0.5);
+    transform-origin: right;
+    opacity: 0;
+  }
+}
+
+
+
+.reveal-ltr-enter-active {
+  animation: revealLtr 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+.reveal-ltr-leave-active {
+  animation: revealLtrReverse 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+@keyframes revealLtr {
+  0% {
+    transform: scaleX(0.5);
+    transform-origin: left;
+    opacity: 0;
+  }
+
+  100% {
+    transform: scaleX(1);
+    transform-origin: left;
+    opacity: 1;
+  }
+}
+
+
+@keyframes revealLtrReverse {
+  0% {
+    transform: scaleX(1);
+    transform-origin: left;
+    opacity: 1;
+  }
+
+  100% {
+    transform: scaleX(0.5);
+    transform-origin: left;
+    opacity: 0;
+  }
+}
+
+
+
+
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
