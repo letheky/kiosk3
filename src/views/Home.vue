@@ -1,16 +1,19 @@
 <template>
   <div class="home-page">
-    <Transition name="fade">
+    <!-- <Transition name="fade">
       <video
         v-show="isPlayingVideo"
         class="home-video"
         ref="homeVideoRef"
         src="/video/home-banner.mp4"
       ></video>
-    </Transition>
+    </Transition> -->
+    <h1 class="title">
+      Hành trình đến Thăng Long
+    </h1>
 
     <Transition name="fade">
-      <div v-show="!isPlayingVideo" class="home-banner-overlay">
+      <div class="home-banner-overlay">
         <div class="btn-overlay">
           <button class="btn" @click="handleRouting">Khám phá</button>
         </div>
@@ -67,13 +70,14 @@ const isPlayingVideo = ref(false);
 const homeVideoRef = ref(null);
 
 const handleRouting = async () => {
-  await nextTick();
-  isPlayingVideo.value = true;
-  homeVideoRef.value.play();
-  setTimeout(() => {
-    isPlayingVideo.value = false;
-    router.push("/about");
-  }, 9000);
+  // await nextTick();
+  // isPlayingVideo.value = true;
+  // homeVideoRef.value.play();
+  // setTimeout(() => {
+  //   isPlayingVideo.value = false;
+  //   router.push("/about");
+  // }, 9000);
+  router.push("/about");
 };
 </script>
 
@@ -93,6 +97,19 @@ const handleRouting = async () => {
   height: 100%;
   background: url("/image/home-bg.webp") no-repeat center/cover;
 
+  .title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color:$secondary-color;
+    font-family: $primary-heading-family;
+    font-size: 42rem;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 80%;
+  }
+
   .home-banner-overlay {
     position: relative;
     width: 100%;
@@ -107,24 +124,26 @@ const handleRouting = async () => {
       bottom: 4.5rem;
       left: 50%;
       transform: translateX(-50%);
-      width: 62rem;
-      height: 14rem;
+      width: 96.83rem;
+      height: 24rem;
       background: url("/image/home-btn-bg.png") no-repeat center center/cover;
+      overflow: visible;
       z-index: 1;
 
       .btn {
-        font-size: 5rem;
+        font-size: 8.83rem;
         font-family: $small-heading-family;
-        color: $secondary-color;
+        color: #fff;
         position: absolute;
         left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        height: 100%;
-        // z-index: -1;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 106%;
+        height: 70%;
         background: url("/image/btn-yellow-bg.png") no-repeat center
           center/cover;
         @include flex-center;
+        filter: drop-shadow(0px 8px 8px rgba(0, 0, 0, 0.65));
       }
     }
   }

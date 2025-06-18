@@ -1,201 +1,134 @@
 <template>
-  <div class="about">
-    <img class="background" src="/image/home-bg.webp" alt="" />
-    <img class="flat-map" src="/image/about/flat-map.png" alt="" />
-    <div class="navigation">
-      <div class="bar left-bar"></div>
-      <div class="main">
-        <div class="content">
-          <h1 ref="headingText">Giới thiệu</h1>
-          <p ref="desText">
-            Hang Con Moong là một chứng cứ cho sự phát triển liên tục từ văn hóa
-            Sơn Vi lên văn hóa Hòa Bình. Có thể nói rằng văn hóa Hòa Bình bắt
-            nguồn từ văn hóa Sơn Vi. Nếu như chủ nhân văn hóa Sơn Vi vừa cư trú
-            ngoài trời vừa cư trú trong hang động tùy theo từng khu vực thì các
-            bộ lạc văn hóa Hòa Bình sống chủ yếu trong các hang động. Cũng đã
-            tìm thấy một số di sản văn hóa Hòa Bình ở ngoài trời như Giáp Khẩu ở
-            Quảng Ninh, Sập Việt ở Sơn La, nhưng những địa điểm như vậy rất ít.
-          </p>
-          <Audio audioSrc="./audio/test-audio.mp3" />
-        </div>
-        <div class="menu">
-          <router-link to="/detail/first" class="nav-btn">
-            Thăng Long <br />
-            nội thành ngoại thi
-          </router-link>
-          <router-link to="/detail/second" class="nav-btn">
-            Thăng Long <br />
-            hội tụ Tinh hoa
-          </router-link>
-          <router-link to="/detail/third" class="nav-btn">
-            Thăng Long <br />
-            tam trùng thành quách
-          </router-link>
-          <router-link to="/detail/fourth" class="nav-btn">
-            Thăng Long <br />
-            tứ trấn
-          </router-link>
-        </div>
+  <div class="about-page">
+    <div class="about-page-content">
+      <div class="context">
+        <h3 class="title">Giới thiệu chung</h3>
+        <p class="text">
+          Thăng Long là một thành phố lớn và nổi bật trong lịch sử Việt Nam. Nó
+          được biết đến là thủ đô của nước Việt Nam từ thời phong kiến phương
+          Bắc cho đến thời kỳ độc lập. Thăng Long có nhiều điểm thú vị và di
+          tích lịch sử, đặc biệt là các lăng mộ, cung điện và đền thờ.
+        </p>
+        <hr class="hr-line" />
       </div>
-      <div class="bar right-bar"></div>
+      <Audio audioSrc="/audio/test-audio.mp3" />
+    </div>
+    <div class="location-list">
+      <img src="/image/about/map.png" alt="map" class="map-image" />
+      <div
+        class="marker-position"
+        v-for="position in locationList"
+        :key="position.id"
+        :style="{
+          '--xCoordinate': `${position?.coordinates.split(',')[0].trim()}%`,
+          '--yCoordinate': `${position?.coordinates.split(',')[1].trim()}%`,
+        }"
+      >
+        <CustomMarker
+          :top="position?.coordinates.split(',')[0].trim()"
+          :left="position?.coordinates.split(',')[1].trim()"
+          :context="position?.name"
+          :isLtr="position?.isLtr"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import CustomMarker from "@/components/CustomMarker.vue";
 import Audio from "@/components/Audio.vue";
-const animating = ref(false);
-const router = useRouter();
-const startAnimationAndNavigate = () => {
-  if (animating.value) return;
 
-  animating.value = true;
-  const doorOpenDuration = 1000;
-  const zoomDuration = 800;
-
-  setTimeout(() => {
-    setTimeout(() => {
-      // router.push("/detail?type=1");
-      animating.value = false;
-    }, zoomDuration);
-  }, doorOpenDuration);
-};
+const locationList = [
+  {
+    name: "Di tích Sơn Vi",
+    coordinates: "47.99,14.68",
+    isLtr: false,
+  },
+  {
+    name: "Di tích Thành Dền",
+    coordinates: "68.98,32.92",
+    isLtr: false,
+  },
+  {
+    name: "Di tích vườn chuối",
+    coordinates: "68.83,40.88",
+    isLtr: false,
+  },
+  {
+    name: "Di tích Cổ Loa",
+    coordinates: "72.76,38.75",
+    isLtr: true,
+  },
+  {
+    name: "Di tích thành Đại La",
+    coordinates: "71.43,45.79",
+    isLtr: true,
+  },
+];
 </script>
 
 <style lang="scss" scoped>
-.about {
+.about-page {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: row;
   position: relative;
-  background-color: #c89d63;
-
-  img.background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+  .about-page-content {
+    width: 25%;
     height: 100%;
-    object-fit: cover;
-    mix-blend-mode: luminosity;
-  }
-  .flat-map {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 70%;
-    object-fit: cover;
-    z-index: 10;
-  }
-
-  .navigation {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 30%;
+    max-height: 100%;
     display: flex;
+    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background-color: #9daf9b;
-    overflow: hidden;
+    background-color: $primary-color;
+    padding: 0 4rem;
+    box-shadow: 8px 0px 52px 0px rgba(0, 0, 0, 0.36);
 
-    .bar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 10rem;
-      height: 100%;
-      background-image: url("/image/about/pattern-vertical.png");
-      background-size: contain;
-      background-position: center;
-    }
-    .right-bar {
-      right: 0;
-      left: unset;
-    }
-    .main {
-      position: relative;
-      width: calc(100% - 20rem);
-      height: 100%;
+    z-index: 10;
+
+    .context {
+      max-height: 90%;
+      padding-top: 8rem;
       display: flex;
-      align-items: center;
-      background-color: $light-color;
-      box-shadow: 0px 2rem 4.5rem 0px #1f0d01;
+      flex-direction: column;
+      gap: 2rem;
+      color: $text-color;
 
-      z-index: 2;
-      .content {
-        width: 50%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: 2rem;
-        padding: 4rem;
+      .title {
         color: $text-color;
-
-        h1 {
-          font-size: 7rem;
-          font-family: $heading-family;
-        }
-        p {
-          font-size: 4rem;
-          // font-family: $text-family;
-          color: $text-color;
-          overflow-y: scroll;
-          display: -webkit-box;
-          -webkit-line-clamp: 4;
-          -webkit-box-orient: vertical;
-          max-height: 18rem;
-        }
+        font-family: $heading-family;
+        font-size: 5.75rem;
       }
-      .menu {
-        flex-grow: 1;
-        min-width: 45%;
-        height: 100%;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        padding: 4rem;
-        gap: 2rem;
+      .text {
+        font-family: $small-heading-family;
+        font-size: 4.25rem;
+        text-align: justify;
+        overflow-y: auto;
+        max-height: 90%;
 
-        .nav-btn {
-          font-size: 4.5rem;
-          font-family: $small-heading-family;
-          color: $text-color;
-          @include flex-center;
-          text-align: center;
-          border: 1px solid $dark-color;
-          padding: 0 6rem;
-          position: relative;
-          perspective: 1200px;
-          &::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 8.5rem;
-            height: 100%;
-            background: url("/image/about/pattern-nav.png") no-repeat
-              center/cover;
-          }
-
-          &::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 8.5rem;
-            height: 100%;
-            background: url("/image/about/pattern-nav.png") no-repeat
-              center/cover;
-            transform: rotate(180deg);
-          }
-        }
+        padding-right: 2rem;
       }
+    }
+  }
+  .location-list {
+    width: 75%;
+    height: 100%;
+    @include flex-center;
+    background-color: #fff;
+    .map-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .marker-position {
+      position: absolute;
+      top: var(--yCoordinate);
+      left: var(--xCoordinate);
+      transform-origin: center;
+      transform: translate(-50%, -50%);
     }
   }
 }

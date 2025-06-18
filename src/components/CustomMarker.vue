@@ -1,13 +1,11 @@
 <template>
-  <div class="parent-element" :style="{ top, left }">
-    <div
-      class="rounded-element"
-      :style="{
-        '--color': `${color}`,
-      }"
-    >
-      <div class="line">
-        <p>{{ context }}</p>
+  <div class="parent-element">
+    <div class="name-tag" :class="{ ltr: isLtr }">
+      <p>{{ context }}</p>
+    </div>
+    <div class="empty-circle">
+      <div class="outer-circle" :class="{ ltr: isLtr }">
+        <div class="inner-circle"></div>
       </div>
     </div>
   </div>
@@ -19,60 +17,73 @@ defineProps({
     type: String,
     default: "#795908",
   },
-  top: {
-    type: String,
-    default: "50%",
-  },
-  left: {
-    type: String,
-    default: "50%",
-  },
   context: {
     type: String,
     default: "Default",
+  },
+  isLtr: {
+    type: Boolean,
+    default: false,
   },
 });
 </script>
 
 <style lang="scss" scoped>
 .parent-element {
-  position: absolute;
+  position: relative;
   z-index: 100;
-  .rounded-element {
-    width: 5rem;
+  display: flex;
+  align-items: center;
+  .name-tag {
+    background-color: #8d4f27;
+
+    padding: 2rem 6rem 2rem 3rem;
+    position: absolute;
+    min-width: max-content;
+    top: 0;
+    left: 0;
+    transform: translateX(-90%);
+    p {
+      color: #fff;
+      font-size: 4.65rem;
+      line-height: 1.2;
+    }
+    &.ltr {
+      padding: 2rem 3rem 2rem 6rem;
+      left: unset;
+      right: 0;
+      transform: translateX(90%);
+    }
+  }
+  .empty-circle {
+    width: 10.22rem;
     aspect-ratio: 1 / 1;
-    background-color: var(--color);
+    background-color: #fff;
     border-radius: 50%;
     position: relative;
-    pointer-events: auto; // Ensure the element itself is clickable
 
-
-    .line {
+    .outer-circle {
+      width: 9.16rem;
+      aspect-ratio: 1 / 1;
+      background-color: #ecbbbb;
+      border-radius: 50%;
       position: absolute;
-      top: -20rem;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      background-color: $primary-color;
-      font-weight: bold;
-      width: 1rem;
-      height: 20rem;
-      z-index: 1;
-
-      p {
-        width: fit-content;
-        min-width: max-content;
-        position: absolute;
-        top: -15rem;
-        left: 50%;
-        transform: translateX(-50%);
-        height: 15rem;
-        background-color: $primary-color;
-        color: white;
-        padding: 0 5rem;
-        font-size: 7rem;
-        @include flex-center;
+      top: 0;
+      right: 0;
+      transform: translateY(5%);
+      &.ltr {
+        left: 0;
       }
+    }
+    .inner-circle {
+      position: absolute;
+      width: 5.7rem;
+      aspect-ratio: 1 / 1;
+      background-color: #ba1a1a;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
   }
 }

@@ -6,7 +6,6 @@
       @loadedmetadata="onLoadedMetadata"
       @ended="onAudioEnded"
     >
-      <!-- Replace this with your actual audio file source -->
       <source :src="resolvedAudioSrc" type="audio/mp4" />
     </audio>
     <p style="color: #fff">{{ name }}</p>
@@ -22,24 +21,43 @@
         </Transition>
       </div>
 
-      <div class="slider-container">
+      <div class="slider-container" ref="sliderContainer">
+        <!-- Progress bar -->
         <div
           class="slider-progress"
           :style="{ width: progressPercentage + '%' }"
         >
           <span class="played-audio" />
         </div>
+
+        <!-- Custom smooth thumb -->
+        <div
+          class="custom-thumb"
+          :style="{
+            left: thumbPosition + 'px',
+            transform: `translateX(-50%) ${
+              isUserSeeking ? 'scale(1.1)' : 'scale(1)'
+            }`,
+          }"
+        />
+
+        <!-- Invisible range input for interaction -->
         <input
           type="range"
           min="0"
           :max="duration"
-          step="1"
+          step="0.001"
           v-model="currentTime"
-          @input="onInputChange"
+          @input="onSliderInput"
+          @mousedown="onSliderMouseDown"
+          @mouseup="onSliderMouseUp"
+          @touchstart="onSliderMouseDown"
+          @touchend="onSliderMouseUp"
+          class="invisible-slider"
         />
       </div>
+
       <div class="time-display">
-        <!-- {{ formatTime(currentTime) }} / {{ formatTime(duration) }} -->
         {{ formatTime(duration) }}
       </div>
     </div>
@@ -47,111 +65,178 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, watch } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  computed,
+  watch,
+  nextTick,
+} from "vue";
 
 import PlayIcon from "/image/play.svg";
 import PauseIcon from "/image/pause.svg";
 
 const audioRef = ref(null);
+const sliderContainer = ref(null);
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
+const isUserSeeking = ref(false);
+const sliderWidth = ref(600); // Default width, will be updated
+
 const props = defineProps({
-  close: Function, // Change from closeVideo to close
+  close: Function,
   audioSrc: String,
   name: String,
 });
 
-const resolvedAudioSrc = ref(""); // Resolved audio source
-// Watch for changes to audioSrc prop and update resolvedAudioSrc
-watch(
-  () => props.audioSrc,
-  async (newAudioSrc) => {
-    if (newAudioSrc) {
-      try {
-        resolvedAudioSrc.value = await newAudioSrc; // Resolve the promise
-        if (audioRef.value) {
-          audioRef.value.load(); // Reload the audio element with the new source
-        }
-      } catch (error) {
-        console.error("Error resolving audioSrc:", error);
-      }
-    }
-  },
-  { immediate: true } // Run the watcher immediately to handle initial value
-);
+const resolvedAudioSrc = ref("");
+
+// Smooth thumb position calculation
+const thumbPosition = computed(() => {
+  if (duration.value === 0 || sliderWidth.value === 0) return 0;
+  return (currentTime.value / duration.value) * sliderWidth.value;
+});
 
 const progressPercentage = computed(() => {
   if (duration.value === 0) return 0;
   return (currentTime.value / duration.value) * 100;
 });
 
+// Update slider width when component mounts or window resizes
+const updateSliderWidth = () => {
+  if (sliderContainer.value) {
+    sliderWidth.value = sliderContainer.value.offsetWidth;
+  }
+};
+
+// Watch for changes to audioSrc prop
+watch(
+  () => props.audioSrc,
+  async (newAudioSrc) => {
+    if (newAudioSrc) {
+      try {
+        resolvedAudioSrc.value = await newAudioSrc;
+        if (audioRef.value) {
+          audioRef.value.load();
+        }
+      } catch (error) {
+        console.error("Error resolving audioSrc:", error);
+      }
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(() => {
-  // Ensure audio element is available
   if (audioRef.value) {
     audioRef.value.addEventListener("loadedmetadata", onLoadedMetadata);
     audioRef.value.addEventListener("timeupdate", onTimeUpdate);
     audioRef.value.addEventListener("ended", onAudioEnded);
   }
+
+  // Update slider width
+  nextTick(() => {
+    updateSliderWidth();
+  });
+
+  // Listen for window resize
+  window.addEventListener("resize", updateSliderWidth);
 });
 
-// Cleanup event listeners when component is unmounted
 onBeforeUnmount(() => {
   if (audioRef.value) {
     audioRef.value.removeEventListener("loadedmetadata", onLoadedMetadata);
     audioRef.value.removeEventListener("timeupdate", onTimeUpdate);
     audioRef.value.removeEventListener("ended", onAudioEnded);
   }
+  window.removeEventListener("resize", updateSliderWidth);
 });
 
-// When metadata is loaded (e.g., audio duration)
 const onLoadedMetadata = () => {
   if (audioRef.value) {
-    duration.value = Math.floor(audioRef.value.duration);
+    duration.value = audioRef.value.duration;
   }
 };
 
-// Update currentTime as audio plays
+// Smooth time updates using requestAnimationFrame
+let animationId = null;
+const smoothTimeUpdate = () => {
+  if (audioRef.value && !isUserSeeking.value && isPlaying.value) {
+    currentTime.value = audioRef.value.currentTime;
+  }
+  animationId = requestAnimationFrame(smoothTimeUpdate);
+};
+
 const onTimeUpdate = () => {
-  if (audioRef.value) {
-    // Round to one decimal place to reduce jitter
-    currentTime.value = Math.round(audioRef.value.currentTime * 10) / 10;
+  // Start smooth animation loop if not already running
+  if (!animationId && isPlaying.value && !isUserSeeking.value) {
+    smoothTimeUpdate();
   }
 };
 
-// Handle audio ended event
 const onAudioEnded = () => {
   isPlaying.value = false;
-  currentTime.value = 0; // Optional: reset to beginning
+  currentTime.value = 0;
   if (audioRef.value) {
-    audioRef.value.currentTime = 0; // Reset audio position
+    audioRef.value.currentTime = 0;
+  }
+  // Stop animation loop
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
   }
 };
 
-// Toggle play/pause
 const togglePlay = () => {
   if (!audioRef.value) return;
 
   if (isPlaying.value) {
     audioRef.value.pause();
     isPlaying.value = false;
+    // Stop smooth animation when paused
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
   } else {
     audioRef.value.play();
     isPlaying.value = true;
-  }
-};
-
-// Handle manual slider (range input) change
-const onInputChange = () => {
-  if (audioRef.value) {
-    const newTime = parseFloat(currentTime.value);
-    if (!isNaN(newTime)) {
-      audioRef.value.currentTime = newTime;
+    // Start smooth animation when playing
+    if (!animationId) {
+      smoothTimeUpdate();
     }
   }
 };
 
-// Utility to format time in mm:ss
+const onSliderMouseDown = () => {
+  isUserSeeking.value = true;
+  // Stop smooth animation during seeking
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+};
+
+const onSliderMouseUp = () => {
+  isUserSeeking.value = false;
+  if (audioRef.value) {
+    audioRef.value.currentTime = currentTime.value;
+  }
+  // Restart smooth animation if playing
+  if (isPlaying.value && !animationId) {
+    smoothTimeUpdate();
+  }
+};
+
+const onSliderInput = () => {
+  if (isUserSeeking.value && audioRef.value) {
+    // Immediate update during seeking for responsiveness
+    audioRef.value.currentTime = currentTime.value;
+  }
+};
+
 const formatTime = (timeInSeconds) => {
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = Math.floor(timeInSeconds % 60);
@@ -168,12 +253,14 @@ defineExpose({
 
 <style lang="scss" scoped>
 .player {
+  padding-bottom: 4rem;
   .my-progress-bar {
     position: relative;
     display: flex;
     align-items: center;
     gap: 3rem;
     contain: layout style;
+
     .play-button {
       cursor: pointer;
       transition: background-color 0.3s ease;
@@ -190,50 +277,74 @@ defineExpose({
       }
     }
 
-    // This wrapper provides positioning context
     .slider-container {
       position: relative;
       height: 6rem;
       background: $audio-unplayed-color;
       width: 60rem;
-      background-image: url("/image/audio-pattern.png");
+      background-image: url("/image/audio-pattern.svg");
       background-repeat: repeat-x;
       background-size: contain;
       background-position: center;
-
-      .pattern {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
 
       .slider-progress {
         position: absolute;
         height: 100%;
         background: $audio-played-color;
-        overflow: hidden;
-        .played-audio {
-          position: absolute;
-          height: 100%;
-          width: 60rem;
-          background-image: url("/image/audio-pattern-played.png");
-          background-repeat: repeat-x;
-          background-size: contain;
-          background-position: center;
-          z-index: 1;
-        }
-
+        overflow: hidden; /* Change to hidden to clip the pattern */
         left: 0;
         top: 0;
         pointer-events: none;
         z-index: 1;
-        /* Add smooth transition for progress changes */
-        transition: width 0.1s ease-in-out;
+        transform-origin: left center;
+        transition: width 0.05s linear; /* Change to width transition */
+
+        .played-audio {
+          position: absolute;
+          height: 100%;
+          width: 60rem;
+          background-image: url("/image/audio-pattern-played.svg");
+          background-repeat: repeat-x;
+          background-size: contain;
+          background-position: center;
+          z-index: 1;
+          left: 0; /* Ensure proper positioning */
+        }
       }
 
-      input[type="range"] {
+      /* Custom smooth thumb */
+      .custom-thumb {
+        position: absolute;
+        height: 9rem;
+        width: 3.5rem;
+        margin-top: -4.25rem;
+        background-color: white;
+        box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
+        top: 50%;
+        transform: translateY(-50%) translateX(-50%);
+        z-index: 3;
+        pointer-events: none;
+        border-radius: 2px;
+        /* Smooth movement transition */
+        transition: transform 0.05s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* Add a subtle glow effect when seeking */
+        &::after {
+          content: "";
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+      }
+
+      /* Invisible range input for interaction */
+      .invisible-slider {
         position: absolute;
         width: 100%;
         height: 100%;
@@ -243,69 +354,48 @@ defineExpose({
         background: transparent;
         cursor: pointer;
         margin: 0;
-        outline: none; /* Remove focus outline that might cause flicker */
+        outline: none;
+        z-index: 2;
 
-        /* WebKit browsers (Chrome, Safari, Edge) */
+        /* Hide all default slider elements */
         &::-webkit-slider-runnable-track {
           -webkit-appearance: none;
           height: 100%;
           background: transparent;
           border: none;
-          outline: none;
         }
 
         &::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 9rem;
-          width: 3.5rem;
-          background-color: white;
+          width: 0;
+          height: 0;
+          background: transparent;
           border: none;
-          box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
           cursor: pointer;
-          position: relative;
-          z-index: 2;
-          margin-top: -1.5rem;
-          will-change: transform;
-          transition: transform 0.1s ease-out;
-          transform: translateZ(0); /* Enable hardware acceleration */
         }
 
-        /* Firefox */
         &::-moz-range-track {
           height: 100%;
           background: transparent;
           border: none;
-          outline: none;
         }
 
         &::-moz-range-thumb {
-          height: 9rem;
-          width: 3.5rem;
-          background-color: white;
+          width: 0;
+          height: 0;
+          background: transparent;
           border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           cursor: pointer;
-          transition: transform 0.1s ease-out;
-          transform: translateZ(0); /* Enable hardware acceleration */
-        }
-
-        /* Remove any focus/active state styling that might cause shrinking */
-        &:focus::-webkit-slider-thumb,
-        &:active::-webkit-slider-thumb {
-          outline: none;
-          /* Maintain consistent size */
-          height: 9rem;
-          width: 3.5rem;
-        }
-
-        &:focus::-moz-range-thumb,
-        &:active::-moz-range-thumb {
-          outline: none;
-          height: 9rem;
-          width: 3.5rem;
         }
       }
+
+      /* Show glow effect when user is seeking */
+      &:hover .custom-thumb::after,
+      .invisible-slider:active ~ .custom-thumb::after {
+        opacity: 1;
+      }
     }
+
     .time-display {
       font-size: 4rem;
       font-weight: 400;
@@ -316,11 +406,6 @@ defineExpose({
       transform: translateY(-50%);
       pointer-events: none;
     }
-  }
-
-  video {
-    width: 80%;
-    // height: 90%;
   }
 }
 </style>
