@@ -14,58 +14,188 @@
       <Audio audioSrc="/audio/test-audio.mp3" />
     </div>
     <div class="location-list">
-      <img src="/image/about/map.png" alt="map" class="map-image" />
       <div
-        class="marker-position"
-        v-for="position in locationList"
-        :key="position.id"
+        class="map-container"
+        @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
         :style="{
-          '--xCoordinate': `${position?.coordinates.split(',')[0].trim()}%`,
-          '--yCoordinate': `${position?.coordinates.split(',')[1].trim()}%`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          overflow: 'hidden',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
         }"
+        ref="mapContainerRef"
       >
-        <CustomMarker
-          :top="position?.coordinates.split(',')[0].trim()"
-          :left="position?.coordinates.split(',')[1].trim()"
-          :context="position?.name"
-          :isLtr="position?.isLtr"
-        />
+        <div
+          class="map-content"
+          :style="{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            transform: `translate(${offsetX}px, ${offsetY}px)`,
+            transition: isDragging ? 'none' : 'transform 0.2s',
+          }"
+        >
+          <img
+            src="/image/about/map.png"
+            alt="map"
+            class="map-image"
+            draggable="false"
+          />
+          <div
+            class="marker-position"
+            v-for="(position, idx) in locationList"
+            :key="idx"
+            :style="{
+              '--xCoordinate': `${position?.coordinates.split(',')[0].trim()}%`,
+              '--yCoordinate': `${position?.coordinates.split(',')[1].trim()}%`,
+              transform: `translate(-50%, -50%)`,
+            }"
+            @click="onMarkerClick(position)"
+          >
+            <CustomMarker :context="position?.name" :isLtr="position?.isLtr" />
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from "vue";
 import CustomMarker from "@/components/CustomMarker.vue";
 import Audio from "@/components/Audio.vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const locationList = [
   {
     name: "Di tích Sơn Vi",
-    coordinates: "47.99,14.68",
-    isLtr: false,
+    coordinates: "30.76,14.81",
+    hasChild: true,
+    id: 1,
   },
   {
     name: "Di tích Thành Dền",
-    coordinates: "68.98,32.92",
-    isLtr: false,
+    coordinates: "58.23,32.92",
+    id: 2,
   },
   {
     name: "Di tích vườn chuối",
-    coordinates: "68.83,40.88",
-    isLtr: false,
+    coordinates: "58.02,40.46",
+    hasChild: false,
+    id: 3,
   },
   {
     name: "Di tích Cổ Loa",
-    coordinates: "72.76,38.75",
-    isLtr: true,
+    coordinates: "63.68,39.31",
+    hasChild: true,
+    id: 4,
   },
   {
     name: "Di tích thành Đại La",
-    coordinates: "71.43,45.79",
-    isLtr: true,
+    coordinates: "62.12,46.57",
+    id: 5,
   },
-];
+].map((location, index, array) => {
+  const [x, y] = location.coordinates
+    .split(",")
+    .map((coord) => parseFloat(coord.trim()));
+
+  // Check for overlaps with previous markers
+  const OVERLAP_THRESHOLD_Y = 4; // Minimum distance between markers
+  const OVERLAP_THRESHOLD_X = 10; // Minimum distance between markers
+
+  const hasOverlap = array.some((otherLocation, otherIndex) => {
+    if (otherIndex >= index) return false; // Only check against previous markers
+
+    const [otherX, otherY] = otherLocation.coordinates
+      .split(",")
+      .map((coord) => parseFloat(coord.trim()));
+
+    // Calculate distance between markers
+    const xDiff = Math.abs(x - otherX);
+    const yDiff = Math.abs(y - otherY);
+
+    // Check if the markers are close to each other in the y-axis
+    return yDiff < OVERLAP_THRESHOLD_Y && xDiff < OVERLAP_THRESHOLD_X;
+  });
+
+  return {
+    ...location,
+    isLtr: hasOverlap, // true when overlap
+  };
+});
+
+const offsetX = ref(0);
+const offsetY = ref(0);
+const isDragging = ref(false);
+const lastX = ref(0);
+const lastY = ref(0);
+const mapContainerRef = ref(null);
+
+function clampOffset(value) {
+  return Math.min(Math.max(value, -1000), 1000);
+}
+
+function onMouseDown(e) {
+  isDragging.value = true;
+  lastX.value = e.clientX;
+  lastY.value = e.clientY;
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+}
+function onMouseMove(e) {
+  if (!isDragging.value) return;
+  const newOffsetX = offsetX.value + (e.clientX - lastX.value);
+  const newOffsetY = offsetY.value + (e.clientY - lastY.value);
+
+  offsetX.value = clampOffset(newOffsetX);
+  offsetY.value = clampOffset(newOffsetY);
+
+  lastX.value = e.clientX;
+  lastY.value = e.clientY;
+}
+function onMouseUp() {
+  isDragging.value = false;
+  window.removeEventListener("mousemove", onMouseMove);
+  window.removeEventListener("mouseup", onMouseUp);
+}
+function onTouchStart(e) {
+  if (e.touches.length !== 1) return;
+  isDragging.value = true;
+  lastX.value = e.touches[0].clientX;
+  lastY.value = e.touches[0].clientY;
+  window.addEventListener("touchmove", onTouchMove);
+  window.addEventListener("touchend", onTouchEnd);
+}
+function onTouchMove(e) {
+  if (!isDragging.value || e.touches.length !== 1) return;
+  const newOffsetX = offsetX.value + (e.touches[0].clientX - lastX.value);
+  const newOffsetY = offsetY.value + (e.touches[0].clientY - lastY.value);
+
+  offsetX.value = clampOffset(newOffsetX);
+  offsetY.value = clampOffset(newOffsetY);
+
+  lastX.value = e.touches[0].clientX;
+  lastY.value = e.touches[0].clientY;
+}
+function onTouchEnd() {
+  isDragging.value = false;
+  window.removeEventListener("touchmove", onTouchMove);
+  window.removeEventListener("touchend", onTouchEnd);
+}
+function onMarkerClick(position) {
+  if (position.hasChild) {
+    router.push(`/detail/${position.id}`);
+  } else {
+    router.push(`/detail/position/${position.id}`);
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -118,17 +248,38 @@ const locationList = [
     height: 100%;
     @include flex-center;
     background-color: #fff;
-    .map-image {
+    position: relative;
+    overflow: hidden;
+    .map-container {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-    }
-    .marker-position {
-      position: absolute;
-      top: var(--yCoordinate);
-      left: var(--xCoordinate);
-      transform-origin: center;
-      transform: translate(-50%, -50%);
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      touch-action: none;
+
+      .map-content {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        .map-image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          pointer-events: none;
+          user-drag: none;
+          user-select: none;
+        }
+        .marker-position {
+          position: absolute;
+          top: var(--yCoordinate);
+          left: var(--xCoordinate);
+          transform-origin: center;
+          // transform is set inline for centering only
+        }
+      }
     }
   }
 }
