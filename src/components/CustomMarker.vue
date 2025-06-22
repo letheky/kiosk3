@@ -1,12 +1,15 @@
 <template>
   <div class="parent-element">
-    <div class="name-tag" :class="{ ltr: isLtr }" :style="{ backgroundColor: color }">
+    <div
+      class="name-tag"
+      :class="{ ltr: isLtr }"
+      :style="{ backgroundColor: color }"
+    >
       <p :style="{ color: textColor }">{{ context }}</p>
     </div>
     <div class="empty-circle">
-      <div class="outer-circle" :class="{ ltr: isLtr }">
-        <div class="inner-circle"></div>
-      </div>
+      <div class="outer-circle" :class="{ ltr: isLtr }"></div>
+      <div class="inner-circle" :class="{ ltr: isLtr }"></div>
     </div>
   </div>
 </template>
@@ -28,7 +31,7 @@ defineProps({
   isLtr: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 </script>
 
@@ -80,7 +83,6 @@ defineProps({
     position: relative;
     mix-blend-mode: multiply;
     background: transparent;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
 
     .outer-circle {
       width: 9.16rem;
@@ -93,6 +95,7 @@ defineProps({
       background: #ecbbbb;
       mix-blend-mode: multiply;
       opacity: 0.8;
+      animation: wave 2s ease-in-out infinite;
 
       &.ltr {
         left: 0;
@@ -106,10 +109,23 @@ defineProps({
       background-color: #ba1a1a;
       border-radius: 50%;
       top: 50%;
-      left: 50%;
+      left: 55%;
       transform: translate(-50%, -50%);
       mix-blend-mode: normal;
+      &.ltr {
+        left: 45%;
+      }
     }
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(5%) scale(0.6);
+  }
+  50% {
+    transform: translateY(5%) scale(1.1);
   }
 }
 </style>

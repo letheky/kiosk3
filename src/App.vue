@@ -20,6 +20,7 @@ function get_config() {
     .get("config/config.json")
     .then((res) => {
       store.api = res.data.api;
+      store.showAudio = res.data.showAudio;
       status.value = true;
     })
     .catch((err) => toast.error("Error fetching config"));

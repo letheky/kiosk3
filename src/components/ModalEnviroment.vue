@@ -69,7 +69,7 @@ onMounted(() => {
   // Load GLB model
   const loader = new GLTFLoader();
   loader.load(
-    "/model/object.glb",
+    "./model/object.glb",
     (gltf) => {
       const model = gltf.scene;
       model.position.y = 0.5;

@@ -1,3 +1,4 @@
 {
-    "api" : "https://vspkiosk.khuy.net"
+    "api": "https://test.kiosk.dev.vietsoftpro.com",
+    "showAudio": false
 }

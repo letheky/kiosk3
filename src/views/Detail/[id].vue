@@ -3,13 +3,11 @@
     <div class="about-page-content">
       <div class="context">
         <div class="content">
-          <h3 class="title">Giới thiệu chung</h3>
-          <p class="text">
-            Thăng Long là một thành phố lớn và nổi bật trong lịch sử Việt Nam.
-            Nó được biết đến là thủ đô của nước Việt Nam từ thời phong kiến
-            phương Bắc cho đến thời kỳ độc lập. Thăng Long có nhiều điểm thú vị
-            và di tích lịch sử, đặc biệt là các lăng mộ, cung điện và đền thờ.
-          </p>
+          <h3 class="title">{{ locationInfo?.translations?.[store.lang]?.name }}</h3>
+          <div
+            class="text"
+            v-html="locationInfo?.translations?.[store.lang]?.content"
+          ></div>
           <hr class="hr-line" />
         </div>
         <Audio audioSrc="/audio/test-audio.mp3" />
@@ -64,17 +62,17 @@
             }"
             @click="onMarkerClick(position)"
           >
-            <template v-if="position?.name">
+            <template v-if="position?.translations?.[store.lang]?.name">
               <CustomMarker
-                :context="position.name"
+                :context="position.translations?.[store.lang]?.name"
                 :isLtr="position.isLtr"
                 color="#ffdbc8"
                 textColor="#6F3811"
               />
             </template>
-            <template v-else>
+            <!-- <template v-else>
               <div class="dot-marker"></div>
-            </template>
+            </template> -->
           </div>
         </div>
 
@@ -98,115 +96,70 @@
         </div>
       </div>
     </div>
-    <Modal :modelValue="isOpen" :close="close"> </Modal>
+    <Modal :selectedLocation="selectedLocation" :modelValue="isOpen" :close="close"> </Modal>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, computed } from "vue";
 import CustomMarker from "@/components/CustomMarker.vue";
 import Audio from "@/components/Audio.vue";
 import Modal from "@/components/Modal.vue";
 import { useRoute, useRouter } from "vue-router";
 import useModal from "@/composables/useModal";
+import { fetchArticleById, fetchMoreGenralArticleInfo } from "@/api/fetch";
+import useStore from "@/store/useStore";
+import useArticleChild from "@/store/useArticleChild";
 
+const store = useStore();
+const articleChildStore = useArticleChild();
 const route = useRoute();
 const router = useRouter();
-const id = Number(route.params.id);
+const id = route.params.id;
 const { isOpen, open, close } = useModal();
 
-const originLocationList =
-  id === 1
-    ? [
-        {
-          id: 1,
-          coordinates: "29.97,15.09",
-        },
-        {
-          id: 2,
-          coordinates: "32.74,16.39",
-        },
-        {
-          id: 3,
-          coordinates: "32.95,22.36",
-        },
-        {
-          id: 4,
-          coordinates: "32.53,22.08",
-        },
-        {
-          id: 5,
-          coordinates: "32.53,21.81",
-        },
-        {
-          id: 6,
-          coordinates: "33.23,24.35",
-        },
-        {
-          id: 7,
-          coordinates: "26.98,23.01",
-        },
-        {
-          id: 8,
-          coordinates: "28.16,24.49",
-        },
-        {
-          id: 9,
-          coordinates: "29.48,25.93",
-        },
-        {
-          id: 10,
-          coordinates: "38.58,29.98",
-        },
-      ]
-    : id === 4
-    ? [
-        {
-          id: 1,
-          coordinates: "62.5,39.03",
-          name: "Thành Cổ Loa",
-        },
-        {
-          id: 2,
-          coordinates: "61.11,41.02",
-          name: "Di chỉ Mả Tre",
-        },
-        {
-          id: 3,
-          coordinates: "62.71,41.81",
-          name: "Di chỉ Đình Tràng",
-        },
-      ]
-    : [];
-const locationList = originLocationList.map((location, index, array) => {
-  const [x, y] = location.coordinates
-    .split(",")
-    .map((coord) => parseFloat(coord.trim()));
+const locationInfo = ref([]);
+const selectedLocation = ref(null);
 
-  // Check for overlaps with previous markers
-  const OVERLAP_THRESHOLD_Y = 1; // Minimum distance between markers
-  const OVERLAP_THRESHOLD_X = 2; // Minimum distance between markers
+onMounted(async () => {
+  const articleInfo = await fetchArticleById(store, id);
+  locationInfo.value = articleInfo;
+  const res = await fetchMoreGenralArticleInfo(store, articleInfo.topic);
+  articleChildStore.setArticleList(res.topic_list.map((el) => el.detailInfo));
+  console.log('check res', res)
+});
 
-  const hasOverlap = array.some((otherLocation, otherIndex) => {
-    if (otherIndex >= index) return false; // Only check against previous markers
-
-
-    const [otherX, otherY] = otherLocation.coordinates
+const locationList = computed(() => {
+  if (!articleChildStore.articleInfo.length > 0) return [];
+  return articleChildStore.articleInfo.map((location, index, array) => {
+    const [x, y] = location.coordinates
       .split(",")
       .map((coord) => parseFloat(coord.trim()));
 
-    // Calculate distance between markers
-    const xDiff = Math.abs(x - otherX);
-    const yDiff = Math.abs(y - otherY);
+    // Check for overlaps with previous markers
+    const OVERLAP_THRESHOLD_Y = 3; // Minimum distance between markers
+    const OVERLAP_THRESHOLD_X = 10; // Minimum distance between markers
 
-    // Check if the markers are close to each other in the y-axis
-    return yDiff < OVERLAP_THRESHOLD_Y && xDiff < OVERLAP_THRESHOLD_X;
+    const hasOverlap = array.some((otherLocation, otherIndex) => {
+      if (otherIndex >= index) return false; // Only check against previous markers
+
+      const [otherX, otherY] = otherLocation.coordinates
+        .split(",")
+        .map((coord) => parseFloat(coord.trim()));
+
+      // Calculate distance between markers
+      const xDiff = Math.abs(x - otherX);
+      const yDiff = Math.abs(y - otherY);
+
+      // Check if the markers are close to each other in the y-axis
+      return yDiff < OVERLAP_THRESHOLD_Y && xDiff < OVERLAP_THRESHOLD_X;
+    });
+
+    return {
+      ...location,
+      isLtr: !hasOverlap, // true when overlap
+    };
   });
-
-  return {
-    ...location,
-    isLtr: hasOverlap, // true when overlap
-  };
 });
 //handle panning & zoom features
 const offsetX = ref(0);
@@ -293,7 +246,9 @@ function onWheel(e) {
   scale.value = Math.min(Math.max(newScale, minScale.value), maxScale.value);
 }
 function onMarkerClick(position) {
-  if (!position.name) {
+  if (position.image_list.length < 2 ) {
+    selectedLocation.value = position;
+    
     // Parse coordinates
     const [xPercent, yPercent] = position.coordinates
       .split(",")
@@ -327,8 +282,7 @@ function onMarkerClick(position) {
     offsetY.value = clampOffset(newOffsetY);
 
     open();
-  }
-  else if(position.name) {
+  } else if (position.name) {
     router.push(`/detail/position/${position.id}`);
   }
 }
@@ -370,14 +324,25 @@ function onMarkerClick(position) {
         font-size: 5.75rem;
       }
       .text {
-        font-family: $small-heading-family;
-        font-size: 4.25rem;
-        text-align: justify;
-        overflow-y: auto;
-        max-height: 90%;
-
-        padding-right: 2rem;
-        margin-bottom: 2rem;
+        flex: 1;
+        :deep(p) {
+          font-family: $small-heading-family !important;
+          font-size: 4.25rem !important;
+          text-align: justify;
+          overflow-y: auto;
+          height: 78% !important;
+          max-height: 78% !important;
+          padding-right: 2rem;
+        }
+        :deep(span) {
+          font-family: $small-heading-family !important;
+          font-size: 4.25rem !important;
+          text-align: justify;
+          overflow-y: auto;
+          height: 78% !important;
+          max-height: 78% !important;
+          padding-right: 2rem;
+        }
       }
     }
     .btn-back {

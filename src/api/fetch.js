@@ -9,7 +9,9 @@ import {
   GET_TOUR_LIST_BY_ID,
   GET_AUDIO_LIST_BY_ID,
   GET_VIDEO_LIST_BY_ID,
-  GET_ARTICLE_LIST_BY_ID
+  GET_ARTICLE_LIST_BY_ID,
+  GET_ARTICLE_BY_ID,
+  GET_ARTIFACT_LIST_BY_ID,
 } from "@/api/const";
 
 export const fetchGenralArticleInfo = async (store, topicId) => {
@@ -29,12 +31,12 @@ export const fetchGenralArticleInfo = async (store, topicId) => {
           tour_list: [],
           artifact_list: [],
           document_list: [],
-          position_list: []
+          position_list: [],
         };
 
         // Fetch image lists
         if (item.image_folder && item.image_folder.length > 0) {
-          const imagePromises = item.image_folder.map(folderId => 
+          const imagePromises = item.image_folder.map((folderId) =>
             fetchArticleImageFolder(store, folderId)
           );
           const imageLists = await Promise.all(imagePromises);
@@ -43,7 +45,7 @@ export const fetchGenralArticleInfo = async (store, topicId) => {
 
         // Fetch audio lists
         if (item.audio_folder && item.audio_folder.length > 0) {
-          const audioPromises = item.audio_folder.map(folderId => 
+          const audioPromises = item.audio_folder.map((folderId) =>
             fetchArticleAudio(store, folderId)
           );
           const audioLists = await Promise.all(audioPromises);
@@ -52,13 +54,12 @@ export const fetchGenralArticleInfo = async (store, topicId) => {
 
         // Fetch other resources if needed
         if (item.document_folder && item.document_folder.length > 0) {
-          const docPromises = item.document_folder.map(folderId => 
+          const docPromises = item.document_folder.map((folderId) =>
             fetchArticleDocument(store, folderId)
           );
           const docLists = await Promise.all(docPromises);
           processedItem.document_list = docLists.flat().filter(Boolean);
         }
-
 
         return processedItem;
       })
@@ -73,13 +74,17 @@ export const fetchGenralArticleInfo = async (store, topicId) => {
           );
           return {
             ...topic,
-            topic_list: topicArticlesResponse.data.topic_list || []
+            detailInfo: topicArticlesResponse.data.article_list[0] || {},
+            topic_list: topicArticlesResponse.data.topic_list || [],
           };
         } catch (error) {
-          console.error(`Error fetching articles for topic ${topic.id}:`, error);
+          console.error(
+            `Error fetching articles for topic ${topic.id}:`,
+            error
+          );
           return {
             ...topic,
-            topic_list: []
+            topic_list: [],
           };
         }
       })
@@ -88,11 +93,114 @@ export const fetchGenralArticleInfo = async (store, topicId) => {
     const topicList = {
       ...response.data,
       article_list: processedArticleList,
-      topic_list: processedTopicList
+      topic_list: processedTopicList,
     };
 
     return topicList;
+  } catch (error) {
+    console.error("Unexpected error fetching article info:", error);
+    throw error; // Re-throw to allow caller to handle
+  }
+};
 
+export const fetchMoreGenralArticleInfo = async (store, topicId) => {
+  try {
+    console.log("running this");
+    const response = await axios.get(
+      store.api + GET_ARTICLE_LIST_BY_ID + topicId + "/"
+    );
+
+    // Process article_list with proper async handling
+    const processedArticleList = await Promise.all(
+      response.data.article_list.map(async (item) => {
+        const processedItem = {
+          ...item,
+          image_list: [],
+          video_list: [],
+          audio_list: [],
+          tour_list: [],
+          artifact_list: [],
+          document_list: [],
+          position_list: [],
+        };
+
+        // Fetch audio lists
+        if (item.audio_folder && item.audio_folder.length > 0) {
+          const audioPromises = item.audio_folder.map((folderId) =>
+            fetchArticleAudio(store, folderId)
+          );
+          const audioLists = await Promise.all(audioPromises);
+          processedItem.audio_list = audioLists.filter(Boolean);
+        }
+
+        return processedItem;
+      })
+    );
+
+    // Process topic_list - fetch article_list for each topic
+    const processedTopicList = await Promise.all(
+      (response.data.topic_list || []).map(async (topic) => {
+        try {
+          const topicArticlesResponse = await axios.get(
+            store.api + GET_ARTICLE_LIST_BY_ID + topic.id + "/"
+          );
+
+          // Initialize image_list and artifact_list for the topic
+          const processedTopic = {
+            ...topic,
+            detailInfo: topicArticlesResponse.data.article_list[0] || {},
+            topic_list: topicArticlesResponse.data.topic_list || [],
+          };
+
+          const topicInfo = topicArticlesResponse.data.article_list[0] || {};
+          // Fetch image lists for the topic
+          if (topicInfo.image_folder && topicInfo.image_folder.length > 0) {
+            const imagePromises = topicInfo.image_folder.map((folderId) =>
+              fetchArticleImageFolder(store, folderId)
+            );
+            const imageLists = await Promise.all(imagePromises);
+            processedTopic.detailInfo.image_list = imageLists
+              .flat()
+              .filter(Boolean);
+          }
+
+          // Fetch artifact lists for the topic
+          if (
+            topicInfo.artifact_folder &&
+            topicInfo.artifact_folder.length > 0
+          ) {
+            const artifactPromises = topicInfo.artifact_folder.map((folderId) =>
+              fetchArticleArtifact(store, folderId)
+            );
+            const artifactLists = await Promise.all(artifactPromises);
+            processedTopic.detailInfo.artifact_list = artifactLists
+              .flat()
+              .filter(Boolean);
+          }
+
+          return processedTopic;
+        } catch (error) {
+          console.error(
+            `Error fetching articles for topic ${topic.id}:`,
+            error
+          );
+          return {
+            ...topic,
+            topic_list: [],
+            image_list: [],
+            artifact_list: [],
+          };
+        }
+      })
+    );
+
+    const topicList = {
+      ...response.data,
+      article_list: processedArticleList,
+      topic_list: processedTopicList,
+    };
+
+    return topicList;
   } catch (error) {
     console.error("Unexpected error fetching article info:", error);
     throw error; // Re-throw to allow caller to handle
@@ -171,14 +279,26 @@ export const fetchArticleTour = async (store, tourFolderId) => {
   }
 };
 
-export const fetchArticleById = async (store, personId) => {
+export const fetchArticleById = async (store, articleId) => {
   try {
-    const personInfo = await axios.get(
-      store.api + GET_PERSON_BY_ID + personId + "/"
+    const articleInfo = await axios.get(
+      store.api + GET_ARTICLE_BY_ID + articleId + "/"
     );
-    return personInfo.data || {};
-  } catch (personFetchError) {
-    console.error("Error fetching person detail:", personFetchError);
+    return articleInfo.data || {};
+  } catch (articleFetchError) {
+    console.error("Error fetching article detail:", articleFetchError);
     return {}; // Return empty object on error
+  }
+};
+
+export const fetchArticleArtifact = async (store, artifactFolderId) => {
+  try {
+    const artifactRes = await axios.get(
+      store.api + GET_ARTIFACT_LIST_BY_ID + artifactFolderId + "/"
+    );
+    return artifactRes.data.artifact_list || [];
+  } catch (artifactFetchError) {
+    console.error("Error fetching artifact file:", artifactFetchError);
+    return []; // Return empty array on error
   }
 };

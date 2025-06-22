@@ -4,7 +4,11 @@ const useArticleDetail = defineStore("articleDetail", {
   state: () => ({
     articleDetail: {}, // Default state
   }),
-  actions: {},
+  actions: {
+    setArticleDetail(article) {
+      this.articleDetail = article;
+    },
+  },
   getters: {},
   persist: {
     storage: sessionStorage,

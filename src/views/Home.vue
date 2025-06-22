@@ -8,9 +8,7 @@
         src="/video/home-banner.mp4"
       ></video>
     </Transition> -->
-    <h1 class="title">
-      Hành trình đến Thăng Long
-    </h1>
+    <h1 class="title">Hành trình đến Thăng Long</h1>
 
     <Transition name="fade">
       <div class="home-banner-overlay">
@@ -23,60 +21,68 @@
 </template>
 
 <script setup>
-// import { ref } from "vue";
-// import axios from "axios";
-// import useStore from "@/store/useStore";
-// import useArticle from "@/store/useArticle";
-// import { fetchGenralArticleInfo } from "@/api/fetch";
-// import { onMounted } from "vue";
-// import { toast } from "vue3-toastify";
-
-// const store = useStore();
-// const articleStore = useArticle();
-
-// onMounted(async () => {
-//   async function getData() {
-//     await axios
-//       .get(
-//         `${store.api}/api/app_kiosk/page-folder/443f9fe5-a55d-404c-9bf6-ec50f58ca01b/`
-//       )
-//       .then((res) => {
-//         if (res.data.page_list.length > 0) {
-//           store.page = res.data.page_list[0];
-//         }
-//       })
-//       .catch((err) => toast.error("Error fetching data"));
-//   }
-//   const fetchData = async () => {
-//     const topicId = store.page.article_topic[0];
-
-//     await fetchGenralArticleInfo(store, topicId)
-//       .then((articleData) => {
-//         articleStore.articleInfo = articleData;
-//       })
-//       .catch((error) => {
-//         toast.error("Failed to fetch article info:", error);
-//       });
-//   };
-//   await getData();
-//   await fetchData();
-// });
-
-import { nextTick } from "vue";
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
+import useStore from "@/store/useStore";
+import useArticle from "@/store/useArticle";
+import { fetchGenralArticleInfo } from "@/api/fetch";
+import { toast } from "vue3-toastify";
+
 const router = useRouter();
-const isPlayingVideo = ref(false);
-const homeVideoRef = ref(null);
+const store = useStore();
+const articleStore = useArticle();
+
+onMounted(async () => {
+  const getData = async () => {
+    try {
+      const config = await axios
+        .get("config/config.json")
+        .then((res) => res.data);
+      store.api = config.api;
+
+      const response = await axios.get(
+        `${store.api}/api/app_kiosk/page-folder/888a0a45-dbfd-40ef-b467-943042f44e59/`
+      );
+
+      if (response.data.page_list.length > 0) {
+        store.page = response.data.page_list[0];
+        return true; // Indicate success
+      }
+      return false; // No data found
+    } catch (err) {
+      toast.error("Error fetching data");
+      return false; // Indicate failure
+    }
+  };
+  const fetchData = async () => {
+    // Check if page data exists and has article_topic array
+    if (
+      !store.page ||
+      !store.page.article_topic ||
+      store.page.article_topic.length === 0
+    ) {
+      toast.error("No article topic found");
+      return;
+    }
+
+    const topicId = store.page.article_topic[0];
+
+    try {
+      const articleData = await fetchGenralArticleInfo(store, topicId);
+      articleStore.articleInfo = articleData;
+    } catch (error) {
+      toast.error("Failed to fetch article info");
+      console.error("Article fetch error:", error);
+    }
+  };
+  await getData();
+  await fetchData();
+});
+
+
 
 const handleRouting = async () => {
-  // await nextTick();
-  // isPlayingVideo.value = true;
-  // homeVideoRef.value.play();
-  // setTimeout(() => {
-  //   isPlayingVideo.value = false;
-  //   router.push("/about");
-  // }, 9000);
   router.push("/about");
 };
 </script>
@@ -102,7 +108,7 @@ const handleRouting = async () => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color:$secondary-color;
+    color: $secondary-color;
     font-family: $primary-heading-family;
     font-size: 42rem;
     text-transform: uppercase;

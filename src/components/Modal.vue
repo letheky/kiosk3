@@ -3,70 +3,108 @@
     <div class="modal" v-if="modelValue">
       <div class="modal-context">
         <img class="background" src="/image/home-bg.webp" alt="" />
-
-        <Swiper
-          v-if="activeTab === 1"
-          :modules="[Navigation, Autoplay]"
-          :slides-per-view="1"
-          :centered-slides="true"
-          :space-between="20"
-          :loop="true"
-          :navigation="true"
-          :autoplay="{
-            delay: 3000,
-            disableOnInteraction: false,
-          }"
-          class="location-swiper"
-        >
-          <SwiperSlide v-for="(img, index) in 5" :key="index">
+        <template v-if="activeTab === 1">
+          <Swiper
+            v-if="selectedLocation.image_list?.[0]?.image_list?.length > 1"
+            :modules="[Navigation, Autoplay]"
+            :slides-per-view="1"
+            :centered-slides="true"
+            :space-between="20"
+            :loop="true"
+            :navigation="true"
+            :autoplay="{
+              delay: 3000,
+              disableOnInteraction: false,
+              enabled: false,
+            }"
+            class="location-swiper"
+            @swiper="onSwiper"
+          >
+            <SwiperSlide
+              v-for="(img, index) in selectedLocation.image_list[0]
+                .image_list"
+              :key="index"
+            >
+              <div class="swiper-image">
+                <img :src="img.image" alt="" @load="onImageLoad" />
+                <p>
+                  {{ img.translations?.[store.lang]?.name }}
+                </p>
+              </div>
+            </SwiperSlide>
+          </Swiper>
+          <div
+            v-else-if="selectedLocation.image_list?.[0]?.image_list?.length > 0"
+            class="location-swiper"
+          >
             <div class="swiper-image">
-              <img :src="`./image/detail/list/list-${index + 1}.png`" alt="" />
+              <img
+                :src="selectedLocation.image_list[0].image_list[0].image"
+                alt=""
+              />
               <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
-                bibendum libero ac est vulputate consectetur. Sed lacus velit,
-                pharetra et turpis nec,
+                {{
+                  selectedLocation.image_list[0].image_list[0].translations?.[
+                    store.lang
+                  ]?.name
+                }}
               </p>
             </div>
-          </SwiperSlide>
-        </Swiper>
+          </div>
+        </template>
         <div v-if="activeTab === 2" class="content">
           <div class="context-wrapper">
             <div class="left-content">
-              <h1>Hiện vật</h1>
-              <p>Chất liệu : Đồng</p>
-              <p>Kích thước : L58,5 x W74 cm</p>
-              <p>Trọng lượng : 72 Kg</p>
+              <h1>
+                {{
+                  selectedLocation.artifact_list.find(
+                    (el) => el.id === selectedItem
+                  ).translations?.[store.lang]?.name
+                }}
+              </h1>
               <p>
-                Trống đồng Cổ Loa được phát hiện năm 1982 tại cánh đồng Mả Tre,
-                xã Cổ Loa, huyện Đông Anh. Trống chôn ngửa, trong lòng chứa hơn
-                200 hiện vật đồng, hoa văn trang trí phong phú, phản ánh đời
-                sống cư dân Di tích Đông Sơn. Giữa mặt trống là ngôi sao 14
-                cánh, từ trong ra ngoài có 15 vành hoa văn, xung quanh là những
-                dải trang trí hình lông công, hoạt cảnh đời thường, chim. Tang
-                và thân trống trang trí hình người, hình thuyền. Chân trống để
-                trơn. Trong lòng trống có khắc dòng chữ Hán. Trống đồng Cổ Loa
-                thuộc loại trống đồng Heger I và là một trong những trống đẹp
-                nhất tương đương các trống Ngọc Lũ và Hoàng Hạ. Kỹ thuật đúc
-                trống tinh xảo. Trống được công nhận là Bảo vật Quốc gia theo
-                Quyết định số 2382/QĐ-TTg ngày 25/12/2015 của Thủ tướng Chính
-                phủ.
+                {{
+                  selectedLocation.artifact_list.find(
+                    (el) => el.id === selectedItem
+                  ).translations?.[store.lang]?.des
+                }}
               </p>
             </div>
             <div class="right-content">
-              <img src="/image/detail/artifact.png" alt="" />
-              <button class="btn-3d" @click="handleClick3D">Tương tác 3D</button>
+              <img
+                :src="
+                  selectedLocation.artifact_list.find(
+                    (el) => el.id === selectedItem
+                  ).thumbnail
+                "
+                alt=""
+              />
+              <button
+                v-if="
+                  selectedLocation.artifact_list.find(
+                    (el) => el.id === selectedItem
+                  ).file ||
+                  selectedLocation.artifact_list.find(
+                    (el) => el.id === selectedItem
+                  ).link
+                "
+                class="btn-3d"
+                @click="handleClick3D"
+              >
+                Tương tác 3D
+              </button>
             </div>
           </div>
           <hr class="hr-line" />
           <div class="artifact-list">
             <div
               class="artifact-item"
-              v-for="(item, index) in 10"
+              v-for="item in selectedLocation.artifact_list"
               :key="item"
-              :class="{ active: selectedItem === index }"
-              @click="selectedItem = index"
+              :class="{ active: selectedItem === item.id }"
+              @click="selectedItem = item.id"
             >
-              <img src="/image/detail/artifact.png" alt="" />
+              <img :src="item.thumbnail" alt="" />
             </div>
           </div>
         </div>
@@ -101,14 +139,22 @@
 </template>
 
 <script setup>
-import { onUnmounted, ref } from "vue";
+import { onUnmounted, ref, computed, watch } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Autoplay, Navigation } from "swiper/modules";
 import useModal from "@/composables/useModal";
 import ModalEnviroment from "./ModalEnviroment.vue";
+import useStore from "@/store/useStore";
+
+const store = useStore();
+
 const props = defineProps({
   modelValue: {
     type: Boolean,
+    required: true,
+  },
+  selectedLocation: {
+    type: Object,
     required: true,
   },
   close: {
@@ -117,12 +163,36 @@ const props = defineProps({
   },
 });
 
-const { isOpen: isOpen3DModal, open: open3DModal, close: close3DModal } =
-  useModal();
+const {
+  isOpen: isOpen3DModal,
+  open: open3DModal,
+  close: close3DModal,
+} = useModal();
 
 const selectedItem = ref(0);
 const activeTab = ref(1);
-const tabList = ref([
+
+const locationSwiper = ref(null);
+const loadedImagesCount = ref(0);
+const totalImages = computed(
+  () => props.selectedLocation?.image_list?.[0]?.image_list?.length || 0
+);
+
+const onSwiper = (swiper) => {
+  locationSwiper.value = swiper;
+};
+
+const onImageLoad = () => {
+  loadedImagesCount.value++;
+  if (totalImages.value > 0 && loadedImagesCount.value >= totalImages.value) {
+    if (locationSwiper.value && !locationSwiper.value.destroyed) {
+      locationSwiper.value.autoplay.start();
+    }
+  }
+};
+
+// Base tab list
+const baseTabList = [
   {
     id: 1,
     name: "Khai quật",
@@ -143,7 +213,40 @@ const tabList = ref([
   //   name: "Tour 360",
   //   image: "/image/item/nav-item.png",
   // },
-]);
+];
+
+// Computed tab list that conditionally includes tab 2
+const tabList = computed(() => {
+  const hasArtifacts = props.selectedLocation?.artifact_list?.length > 0;
+
+  if (hasArtifacts) {
+    return baseTabList;
+  } else {
+    // Filter out tab 2 (id: 2) when there are no artifacts
+    return baseTabList.filter((tab) => tab.id !== 2);
+  }
+});
+
+// Watch for changes in selectedLocation and reset activeTab if needed
+watch(
+  () => props.selectedLocation,
+  (newLocation) => {
+    // Autoplay logic
+    loadedImagesCount.value = 0;
+    if (locationSwiper.value && !locationSwiper.value.destroyed) {
+      locationSwiper.value.autoplay.stop();
+    }
+
+    const hasArtifacts = newLocation?.artifact_list?.length > 0;
+    selectedItem.value = newLocation?.artifact_list[0]?.id;
+
+    // If user is on tab 2 and there are no artifacts, reset to tab 1
+    if (activeTab.value === 2 && !hasArtifacts) {
+      activeTab.value = 1;
+    }
+  },
+  { immediate: true, deep: true }
+);
 
 const closeModal = () => {
   props.close();
@@ -156,6 +259,9 @@ const handleClick3D = () => {
 };
 
 onUnmounted(() => {
+  if (locationSwiper.value && !locationSwiper.value.destroyed) {
+    locationSwiper.value.autoplay.stop();
+  }
   close3DModal();
 });
 </script>
@@ -220,18 +326,16 @@ onUnmounted(() => {
           color: $text-color;
 
           h1 {
-            font-size: 5.7rem;
-            font-weight: 700;
+            font-size: 8.66rem;
+            font-family: $heading-family;
             color: $text-color;
           }
           p {
-            font-size: 3.4rem;
+            font-size: 4.2rem;
             color: $text-color;
-            &:last-child {
-              padding-right: 2rem;
-              overflow-y: auto;
-              text-align: justify;
-            }
+            padding-right: 2rem;
+            overflow-y: auto;
+            text-align: justify;
           }
         }
         .right-content {
@@ -243,12 +347,13 @@ onUnmounted(() => {
           justify-content: center;
           align-items: center;
           z-index: $priority-max;
-          padding: 5rem 14.5rem 11.5rem 14.5rem;
+          padding: 5rem 14.5rem 5rem 14.5rem;
+          gap: 2rem;
 
           img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             filter: drop-shadow(5.28px 0px 10.56px #000000a6);
           }
           .btn-3d {
@@ -260,10 +365,6 @@ onUnmounted(() => {
             font-size: 3rem;
             line-height: 1.2;
             color: #fff;
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
           }
         }
       }

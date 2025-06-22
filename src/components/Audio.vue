@@ -1,5 +1,5 @@
 <template>
-  <div class="player">
+  <div class="player" v-if="store.showAudio">
     <audio
       ref="audioRef"
       @timeupdate="onTimeUpdate"
@@ -73,7 +73,7 @@ import {
   watch,
   nextTick,
 } from "vue";
-
+import useStore from "@/store/useStore";
 import PlayIcon from "/image/play.svg";
 import PauseIcon from "/image/pause.svg";
 
@@ -90,6 +90,8 @@ const props = defineProps({
   audioSrc: String,
   name: String,
 });
+
+const store = useStore();
 
 const resolvedAudioSrc = ref("");
 

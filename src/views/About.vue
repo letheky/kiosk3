@@ -2,14 +2,14 @@
   <div class="about-page">
     <div class="about-page-content">
       <div class="context">
-        <h3 class="title">Giới thiệu chung</h3>
-        <p class="text">
-          Thăng Long là một thành phố lớn và nổi bật trong lịch sử Việt Nam. Nó
-          được biết đến là thủ đô của nước Việt Nam từ thời phong kiến phương
-          Bắc cho đến thời kỳ độc lập. Thăng Long có nhiều điểm thú vị và di
-          tích lịch sử, đặc biệt là các lăng mộ, cung điện và đền thờ.
-        </p>
-        <hr class="hr-line" />
+        <h3 class="title">
+          {{ introArticle?.translations?.[store.lang]?.name }}
+        </h3>
+        <div
+          class="text"
+          v-html="introArticle?.translations?.[store.lang]?.content"
+        ></div>
+        <hr v-if="store.showAudio" class="hr-line" />
       </div>
       <Audio audioSrc="/audio/test-audio.mp3" />
     </div>
@@ -56,7 +56,10 @@
             }"
             @click="onMarkerClick(position)"
           >
-            <CustomMarker :context="position?.name" :isLtr="position?.isLtr" />
+            <CustomMarker
+              :context="position?.translations?.[store.lang]?.name"
+              :isLtr="position?.isLtr"
+            />
           </div>
         </div>
       </div>
@@ -65,70 +68,60 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, computed } from "vue";
 import CustomMarker from "@/components/CustomMarker.vue";
 import Audio from "@/components/Audio.vue";
 import { useRouter } from "vue-router";
+import useStore from "@/store/useStore";
+import useArticle from "@/store/useArticle";
 
 const router = useRouter();
+const store = useStore();
+const articleStore = useArticle();  
 
-const locationList = [
-  {
-    name: "Di tích Sơn Vi",
-    coordinates: "30.76,14.81",
-    hasChild: true,
-    id: 1,
-  },
-  {
-    name: "Di tích Thành Dền",
-    coordinates: "58.23,32.92",
-    id: 2,
-  },
-  {
-    name: "Di tích vườn chuối",
-    coordinates: "58.02,40.46",
-    hasChild: false,
-    id: 3,
-  },
-  {
-    name: "Di tích Cổ Loa",
-    coordinates: "63.68,39.31",
-    hasChild: true,
-    id: 4,
-  },
-  {
-    name: "Di tích thành Đại La",
-    coordinates: "62.12,46.57",
-    id: 5,
-  },
-].map((location, index, array) => {
-  const [x, y] = location.coordinates
-    .split(",")
-    .map((coord) => parseFloat(coord.trim()));
+const introArticle = ref(null);
 
-  // Check for overlaps with previous markers
-  const OVERLAP_THRESHOLD_Y = 4; // Minimum distance between markers
-  const OVERLAP_THRESHOLD_X = 10; // Minimum distance between markers
+onMounted(async () => {
+  introArticle.value = articleStore.articleInfo.article_list[0];
+});
 
-  const hasOverlap = array.some((otherLocation, otherIndex) => {
-    if (otherIndex >= index) return false; // Only check against previous markers
-
-    const [otherX, otherY] = otherLocation.coordinates
+const locationList = computed(() => {
+  if (!articleStore.articleInfo?.topic_list) return [];
+  return articleStore.articleInfo.topic_list.map((el) => ({
+    ...el.detailInfo,
+    hasChild: el.topic_list.length > 0,
+  }));
+});
+onMounted(() => {
+  locationList.value.map((location, index, array) => {
+    const [x, y] = location.coordinates
       .split(",")
       .map((coord) => parseFloat(coord.trim()));
 
-    // Calculate distance between markers
-    const xDiff = Math.abs(x - otherX);
-    const yDiff = Math.abs(y - otherY);
+    // Check for overlaps with previous markers
+    const OVERLAP_THRESHOLD_Y = 4; // Minimum distance between markers
+    const OVERLAP_THRESHOLD_X = 10; // Minimum distance between markers
 
-    // Check if the markers are close to each other in the y-axis
-    return yDiff < OVERLAP_THRESHOLD_Y && xDiff < OVERLAP_THRESHOLD_X;
+    const hasOverlap = array.some((otherLocation, otherIndex) => {
+      if (otherIndex >= index) return false; // Only check against previous markers
+
+      const [otherX, otherY] = otherLocation.coordinates
+        .split(",")
+        .map((coord) => parseFloat(coord.trim()));
+
+      // Calculate distance between markers
+      const xDiff = Math.abs(x - otherX);
+      const yDiff = Math.abs(y - otherY);
+
+      // Check if the markers are close to each other in the y-axis
+      return yDiff < OVERLAP_THRESHOLD_Y && xDiff < OVERLAP_THRESHOLD_X;
+    });
+
+    return {
+      ...location,
+      isLtr: hasOverlap, // true when overlap
+    };
   });
-
-  return {
-    ...location,
-    isLtr: hasOverlap, // true when overlap
-  };
 });
 
 const offsetX = ref(0);
@@ -226,6 +219,7 @@ function onMarkerClick(position) {
       flex-direction: column;
       gap: 2rem;
       color: $text-color;
+      flex: 1;
 
       .title {
         color: $text-color;
@@ -233,13 +227,16 @@ function onMarkerClick(position) {
         font-size: 5.75rem;
       }
       .text {
-        font-family: $small-heading-family;
-        font-size: 4.25rem;
-        text-align: justify;
-        overflow-y: auto;
-        max-height: 90%;
-
-        padding-right: 2rem;
+        flex: 1;
+        :deep(p) {
+          font-family: $small-heading-family;
+          font-size: 4.25rem;
+          text-align: justify;
+          overflow-y: auto;
+          height: 78%;
+          max-height: 78%;
+          padding-right: 2rem;
+        }
       }
     }
   }

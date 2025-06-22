@@ -3,46 +3,131 @@
     <div class="about-page-content">
       <div class="context">
         <div class="content">
-          <h3 class="title">Giới thiệu chung</h3>
-          <p class="text">
-            Thăng Long là một thành phố lớn và nổi bật trong lịch sử Việt Nam.
-            Nó được biết đến là thủ đô của nước Việt Nam từ thời phong kiến
-            phương Bắc cho đến thời kỳ độc lập. Thăng Long có nhiều điểm thú vị
-            và di tích lịch sử, đặc biệt là các lăng mộ, cung điện và đền thờ.
-          </p>
-          <hr class="hr-line" />
+          <h3 class="title">
+            {{
+              articleDetailStore.articleDetail.translations?.[store.lang]?.name
+            }}
+          </h3>
+          <div
+            class="text"
+            v-html="
+              articleDetailStore.articleDetail.translations?.[store.lang]
+                ?.content
+            "
+          />
         </div>
+        <hr v-if="store.showAudio" class="hr-line" />
         <Audio audioSrc="/audio/test-audio.mp3" />
       </div>
       <div class="btn-back">
-        <router-link class="btn-back-link" to="/about">Quay lại</router-link>
+        <button class="btn-back-link" @click="router.back()">Quay lại</button>
       </div>
     </div>
     <div class="main-content">
       <img class="background" src="/image/home-bg.webp" alt="" />
-      <div v-if="activeTab === 1" class="content-wrapper">
-        <img src="/image/detail/map.png" alt="" />
+      <div v-if="activeTab === 1" class="swiper-container">
+        <template
+          v-if="
+            articleDetailStore?.articleDetail?.image_folder?.[0]?.image_list
+              ?.length > 1
+          "
+        >
+          <Swiper
+            :modules="[Pagination]"
+            :slides-per-view="1"
+            :loop="true"
+            :pagination="{
+              clickable: true,
+              dynamicBullets: true,
+            }"
+            :autoplay="{
+              delay: 3000,
+              disableOnInteraction: false,
+            }"
+            class="pagination-swiper"
+          >
+            <SwiperSlide
+              v-for="(img, index) in articleDetailStore.articleDetail
+                .image_folder[0].image_list"
+              :key="index"
+            >
+              <div class="swiper-image">
+                <img :src="img.image || img.thumbnail" alt="" />
+              </div>
+            </SwiperSlide>
+          </Swiper>
+        </template>
+        <template v-else>
+          <img
+            :src="
+              articleDetailStore?.articleDetail?.image_folder?.[0]?.image_list?.[0]
+                ?.image
+            "
+            alt=""
+          />
+        </template>
       </div>
       <div v-if="activeTab === 2" class="content-wrapper">
-        <img src="/image/detail/flat-surface.png" alt="" />
+        <template
+          v-if="
+            articleDetailStore?.articleDetail?.image_folder?.[1]?.image_list
+              ?.length > 1
+          "
+        >
+          <Swiper
+            :modules="[Pagination]"
+            :slides-per-view="1"
+            :loop="true"
+            :autoplay="{
+              delay: 3000,
+              disableOnInteraction: false,
+            }"
+            :pagination="{
+              clickable: true,
+              dynamicBullets: true,
+            }"
+            class="pagination-swiper"
+          >
+            <SwiperSlide
+              v-for="(img, index) in articleDetailStore.articleDetail
+                .image_folder[1].image_list"
+              :key="index"
+            >
+              <div class="swiper-image">
+                <img :src="img.image || img.thumbnail" alt="" />
+              </div>
+            </SwiperSlide>
+          </Swiper>
+        </template>
+        <template v-else>
+          <img
+            :src="
+              articleDetailStore?.articleDetail?.image_folder?.[1]?.image_list?.[0]
+                ?.image
+            "
+            alt=""
+          />
+        </template>
       </div>
       <div v-if="activeTab === 3" class="swiper-container">
         <Swiper
           :modules="[Navigation, Thumbs]"
           :thumbs="{ swiper: thumbsSwiper }"
           :slides-per-view="1"
-          :space-between="20"
+          :space-between="26"
           :loop="true"
           @swiper="setMainSwiper"
           class="main-swiper"
         >
-          <SwiperSlide v-for="(img, index) in 5" :key="index">
+          <SwiperSlide
+            v-for="(img, index) in articleDetailStore.articleDetail
+              .image_folder[2].image_list"
+            :key="index"
+          >
             <div class="swiper-image">
-              <img :src="`./image/detail/list/list-${index + 1}.png`" alt="" />
+              <img :src="img.image || img.thumbnail" alt="" />
               <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
-                bibendum libero ac est vulputate consectetur. Sed lacus velit,
-                pharetra et turpis nec,
+                {{ img.translations?.[store.lang]?.name }}
               </p>
             </div>
           </SwiperSlide>
@@ -50,15 +135,19 @@
 
         <Swiper
           :modules="[Navigation, Thumbs]"
-          :slides-per-view="5"
-          :space-between="10"
+          :slides-per-view="5.2"
+          :space-between="32"
           :watch-slides-progress="true"
           @swiper="setThumbsSwiper"
           class="thumbs-swiper"
         >
-          <SwiperSlide v-for="(img, index) in 5" :key="index">
+          <SwiperSlide
+            v-for="(img, index) in articleDetailStore.articleDetail
+              .image_folder[2].image_list"
+            :key="index"
+          >
             <div class="thumb-image">
-              <img :src="`./image/detail/list/list-${index + 1}.png`" alt="" />
+              <img :src="img.thumbnail" alt="" />
             </div>
           </SwiperSlide>
         </Swiper>
@@ -66,40 +155,63 @@
       <div v-if="activeTab === 4" class="content">
         <div class="context-wrapper">
           <div class="left-content">
-            <h1>Hiện vật</h1>
-            <p>Chất liệu : Đồng</p>
-            <p>Kích thước : L58,5 x W74 cm</p>
-            <p>Trọng lượng : 72 Kg</p>
+            <h1>
+              {{
+                articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                  (el) => el.id === selectedItem
+                ).translations?.[store.lang]?.name
+              }}
+            </h1>
             <p>
-              Trống đồng Cổ Loa được phát hiện năm 1982 tại cánh đồng Mả Tre, xã
-              Cổ Loa, huyện Đông Anh. Trống chôn ngửa, trong lòng chứa hơn 200
-              hiện vật đồng, hoa văn trang trí phong phú, phản ánh đời sống cư
-              dân Di tích Đông Sơn. Giữa mặt trống là ngôi sao 14 cánh, từ trong
-              ra ngoài có 15 vành hoa văn, xung quanh là những dải trang trí
-              hình lông công, hoạt cảnh đời thường, chim. Tang và thân trống
-              trang trí hình người, hình thuyền. Chân trống để trơn. Trong lòng
-              trống có khắc dòng chữ Hán. Trống đồng Cổ Loa thuộc loại trống
-              đồng Heger I và là một trong những trống đẹp nhất tương đương các
-              trống Ngọc Lũ và Hoàng Hạ. Kỹ thuật đúc trống tinh xảo. Trống được
-              công nhận là Bảo vật Quốc gia theo Quyết định số 2382/QĐ-TTg ngày
-              25/12/2015 của Thủ tướng Chính phủ.
+              {{
+                articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                  (el) => el.id === selectedItem
+                ).translations?.[store.lang]?.des
+              }}
             </p>
           </div>
           <div class="right-content">
-            <img src="/image/detail/artifact.png" alt="" />
-            <button class="btn-3d" @click="handleClick3D">Tương tác 3D</button>
+            <img
+              :src="
+                articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                  (el) => el.id === selectedItem
+                ).thumbnail
+              "
+              alt=""
+            />
+            <button
+              v-if="
+                articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                  (el) => el.id === selectedItem
+                ).file ||
+                articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                  (el) => el.id === selectedItem
+                ).link
+              "
+              class="btn-3d"
+              @click="
+                handleClick3D(
+                  articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                    (el) => el.id === selectedItem
+                  )
+                )
+              "
+            >
+              Tương tác 3D
+            </button>
           </div>
         </div>
         <hr class="hr-line" />
         <div class="artifact-list">
           <div
             class="artifact-item"
-            v-for="(item, index) in 10"
+            v-for="item in articleDetailStore.articleDetail.artifact_folder[0]
+              .artifact_list"
             :key="item"
-            :class="{ active: selectedItem === index }"
-            @click="selectedItem = index"
+            :class="{ active: selectedItem === item.id }"
+            @click="selectedItem = item.id"
           >
-            <img src="/image/detail/artifact.png" alt="" />
+            <img :src="item.thumbnail" alt="" />
           </div>
         </div>
       </div>
@@ -128,31 +240,59 @@
     <Transition name="fade">
       <ModalEnviroment @close="close3DModal" v-if="isOpen3DModal" />
     </Transition>
+    <Transition name="fade">
+      <div v-if="showIframe" class="iframe-wrapper">
+        <div class="inner-wrapper">
+          <iframe
+            class="iframe"
+            :src="
+              articleDetailStore.articleDetail.artifact_folder[0].artifact_list.find(
+                (el) => el.id === selectedItem
+              ).link
+            "
+            frameborder="0"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="btn-close" @click="showIframe = false">Đóng</div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onUnmounted, watch } from "vue";
+import { ref, onUnmounted, watch, onMounted } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
-import { Navigation, Thumbs } from "swiper/modules";
+import { Navigation, Thumbs, Pagination, Autoplay } from "swiper/modules";
 import Audio from "@/components/Audio.vue";
 import ModalEnviroment from "@/components/ModalEnviroment.vue";
 import { useRoute, useRouter } from "vue-router";
 import useModal from "@/composables/useModal";
+import useStore from "@/store/useStore";
+import useArticleDetail from "@/store/useArticleDetail";
+import { fetchArticleById } from "@/api/fetch";
 
 const route = useRoute();
 const router = useRouter();
-const id = Number(route.params.id);
+const id = route.params.id;
 const {
   isOpen: isOpen3DModal,
   open: open3DModal,
   close: close3DModal,
 } = useModal();
-
+const store = useStore();
+const articleDetailStore = useArticleDetail();
 const selectedItem = ref(0);
 const activeTab = ref(1);
 const thumbsSwiper = ref(null);
 const mainSwiper = ref(null);
+const showIframe = ref(false);
+
+onMounted(async () => {
+  const articleDetail = await fetchArticleById(store, id);
+  articleDetailStore.setArticleDetail(articleDetail);
+  selectedItem.value = articleDetail.artifact_folder[0].artifact_list[0].id;
+});
 
 const setThumbsSwiper = (swiper) => {
   thumbsSwiper.value = swiper;
@@ -163,19 +303,22 @@ const setMainSwiper = (swiper) => {
 };
 
 // Reset swiper when changing tabs
-watch(() => activeTab.value, (newTab, oldTab) => {
-  if (oldTab === 3) {
-    // Clean up when leaving tab 3
-    if (thumbsSwiper.value) {
-      thumbsSwiper.value.destroy();
-      thumbsSwiper.value = null;
-    }
-    if (mainSwiper.value) {
-      mainSwiper.value.destroy();
-      mainSwiper.value = null;
+watch(
+  () => activeTab.value,
+  (newTab, oldTab) => {
+    if (oldTab === 3) {
+      // Clean up when leaving tab 3
+      if (thumbsSwiper.value) {
+        thumbsSwiper.value.destroy();
+        thumbsSwiper.value = null;
+      }
+      if (mainSwiper.value) {
+        mainSwiper.value.destroy();
+        mainSwiper.value = null;
+      }
     }
   }
-});
+);
 
 const tabList = ref([
   {
@@ -200,8 +343,12 @@ const tabList = ref([
   },
 ]);
 
-const handleClick3D = () => {
-  open3DModal();
+const handleClick3D = (item) => {
+  if (item.file) {
+    open3DModal();
+  } else {
+    showIframe.value = true;
+  }
 };
 
 onUnmounted(() => {
@@ -249,20 +396,45 @@ onUnmounted(() => {
       color: $text-color;
       flex-grow: 1;
 
-      .title {
-        color: $text-color;
-        font-family: $heading-family;
-        font-size: 5.75rem;
-      }
-      .text {
-        font-family: $small-heading-family;
-        font-size: 4.25rem;
-        text-align: justify;
-        overflow-y: auto;
+      .content {
         max-height: 90%;
-
-        padding-right: 2rem;
-        margin-bottom: 2rem;
+        .title {
+          color: $text-color;
+          font-family: $heading-family;
+          font-size: 5.75rem;
+        }
+        .text {
+          max-height: 90%;
+          overflow-y: auto;
+          padding-right: 2rem;
+          :deep(p) {
+            font-family: $small-heading-family !important;
+            font-size: 4.25rem !important;
+            text-align: justify;
+            overflow-y: auto;
+            // height: 78% !important;
+            // max-height: 78% !important;
+            padding-right: 2rem;
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+          }
+          :deep(span) {
+            font-family: $small-heading-family !important;
+            font-size: 4.25rem !important;
+            text-align: justify;
+            overflow-y: auto;
+            // height: 78% !important;
+            // max-height: 78% !important;
+            padding-right: 2rem;
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+          }
+        }
+      }
+      .hr-line {
+        width: 100%;
+        height: 1px;
+        background-color: $text-color;
       }
     }
     .btn-back {
@@ -332,6 +504,31 @@ onUnmounted(() => {
         height: 78%;
         position: relative;
 
+        :deep(.swiper-pagination) {
+          position: absolute;
+          bottom: 2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+
+          .swiper-pagination-bullet {
+            width: 2rem;
+            height: 2rem;
+            background-color: transparent;
+            border: 2px solid #8c4f27;
+            border-radius: 50%;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+            opacity: 1;
+
+            &.swiper-pagination-bullet-active {
+              background-color: #8c4f27;
+              border-color: #8c4f27;
+              transform: none;
+            }
+          }
+        }
+
         .swiper-image {
           width: 100%;
           height: 100%;
@@ -360,17 +557,55 @@ onUnmounted(() => {
           }
         }
       }
+      .pagination-swiper {
+        width: 100%;
+        height: 100%;
+        position: relative;
 
+        :deep(.swiper-pagination) {
+          position: absolute;
+          bottom: 2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+
+          .swiper-pagination-bullet {
+            width: 4rem;
+            height: 4rem;
+            background-color: transparent;
+            border: 2px solid #8c4f27;
+            border-radius: 50%;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+            opacity: 1;
+
+            &.swiper-pagination-bullet-active {
+              background-color: #8c4f27;
+              border-color: #8c4f27;
+              transform: none;
+            }
+          }
+        }
+
+        .swiper-image {
+          width: 100%;
+          height: 100%;
+          position: relative;
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+      }
       .thumbs-swiper {
         width: 100%;
         height: 22%;
 
         :deep(.swiper-slide) {
-          opacity: 0.4;
-          cursor: pointer;
-
           &.swiper-slide-thumb-active {
-            opacity: 1;
+            border: 10px solid #ffffff;
           }
 
           .thumb-image {
@@ -557,6 +792,50 @@ onUnmounted(() => {
         background-size: cover;
         z-index: 1;
       }
+    }
+  }
+  .iframe-wrapper {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    overflow: hidden;
+    .inner-wrapper {
+      width: 80%;
+      height: 80%;
+      position: fixed;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      overflow: hidden;
+      .iframe {
+        width: 100%;
+        height: 120%;
+        border: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+    .btn-close {
+      position: absolute;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: fit-content;
+      height: fit-content;
+      background-color: #fff8f2;
+      color: $text-color;
+      font-size: 4rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 2.6rem;
+      border: 2px solid #807666;
     }
   }
 }
